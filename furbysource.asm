@@ -33,7 +33,7 @@ Telephone (312) 372-7842
 ²
 ;²
 ²
-;²       Written by: Dave Hampton  /  Wa___ Schulz
+;²       Written by: Dave Hampton  /  Wayne Schulz
 ²
 ;²       Date:       July 30, 1998
 ²
