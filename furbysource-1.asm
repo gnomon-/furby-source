@@ -1,24 +1,65 @@
-;╔══════════════════════════════════════════════════════════════════════════╗
-;║      SPC81A Source Code   (Version 25)                                   ║
-;║      Written by: Dave Hampton / Wayne Schulz                             ║
-;║      Date:       July 30, 1998                                           ║
-;║      Copyright (C) 1996,1997,1998 by Sounds Amazing!                     ║
-;║      All rights reserved.                                                ║
-;╚══════════════════════════════════════════════════════════════════════════╝
-;
-;
-;***********************************************************************
+                           TITLE PAGE
 
-;  remember   SBC    if there is a borrow carry is CLEARED
+
+                        INTERACTIVE TOY
+
+                   (FURBY.ASM - Version 25)
+
+
+                    INVENTOR:  Dave Hampton
+
+
+
+
+
+
+
+
+
+
+
+Attorney Docket No. 64799
+FITCH, EVEN, TABIN & FLANNERY
+Suite 900
+135 South LaSalle Street
+Chicago, Illinois  60603-4277
+Telephone (312) 372-7842
+
+;ÉÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+ÍÍÍÍÍ»
+;²
+²
+;²       SPC81A Source Code   (Version 25)
+²
+;²
+²
+;²       Written by: Dave Hampton / Wayne Schulz
+²
+;²       Date:       July 30, 1998
+²
+;²
+²
+;²       Copyright (C) 1996,1997,1998 by Sounds Amazing!
+²
+;²       All rights reserved.
+;ÈÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+ÍÍÍÍÍ¼
+;
+;
+;************************************************************************
+
+;  remember   SBC    if there is a barrow carry is CLEARED
 ;  also SBC   if the two numbers are equal you still get a negative result
 
-;╔══════════════════════════════════════════════════════════════════════════╗
-;║   MODIFICATION LIST :                                                    ║
+;
+;
+;ÉÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ»
+;²   MODIFICATION LIST :                                                    ²
 ;
 ; Furby29/30/31/32
 ;     Final testing for shipment of code on 8/2/98.
-;     Tables updated■■■■tor speed updated, wake up/name fix
-;     sequential tables never getting first entry fixed.
+;     Tables updated,■■■tor speed updated, wake up/name fix
+;     sequential tables never getting first entry,fixed.
 ;     New diag5.asm, Light3.asm (if light osc stalls it wont hang system).
 ; 
 ; Furby33
@@ -35,7 +76,6 @@
 ;     and ROOSTER LOVES YOU. Also add new names.
 ;
 ;
-;
 ;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 ; Release 3
@@ -43,7 +83,7 @@
 ;; File "testR3a"
 
 ; 1. Light sensor has a hysteresis point of continually triggering sensor.
-; 2. Light sensor decrements two instead of one on hungrey counter.
+; 2. Light sensor decrements two instead of one on hungry counter.
 ; 3. Diagnos■■■■■■de for light sensor wont trigger very easily.
 ; 4. When a furby receives the I.R. sleep command he sends the same command
 ;    out before going to sleep.
@@ -80,8 +120,8 @@
 ;    When song is complete, if both front and back switches are pressed
 ;    we goto deep sleep. That means only the invert can wake us up, not
 ;    the tilt switch.
-;║                                                                          ║
-;╚══════════════════════════════════════════════════════════════════════════╝
+;²                                                                          ²
+;ÈÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼
 ;***********************************************************************
 ;***********************************************************************
 ;***********************************************************************
@@ -97,7 +137,7 @@
 ;  bit 0-5 value to change course value (no change = 0)
 
 ; A math routine in 'say_0' converts the value for + or -
-; if <80 then subracts from 80 to get the minus version of 00
+; if <80 then subtracts from 80 to get the minus version of 00
 ; ie, if number is 70 then TI gets sent 10 (which is -10)
 ; If number is 80 or > 80 then get sent literal as positive.
 
@@ -112,7 +152,7 @@
 
 
 ; The math routine in 'Say_0' allows a +-decimal number in the speech table.
-; A value f 80 = no change or 00 sent to TI
+; A value of 80 = no change or 00 sent to TI
 ; 81 = +1
 ; 8f = +16
 ;
@@ -120,12 +160,12 @@
 ;70 = -16
 
 ; The voice selection should take into consideration that the hi voice
-; selection plus an aditional offset is never greater than 8f
+; selection plus an additional offset is never greater than 8f
 ; Or a low voice minus offset never less than 2f.
 
-Voice1     EQU    83h   ;(+3) hi voice
-Voice2     EQU    7Ah   ;(-6) mid voice
-Voice3     EQU    71h   ;(-15) low voice
+Voice1      EQU   83h   ;(+3) hi voice
+Voice2      EQU   7Ah   ;(-6) mid voice
+Voice3      EQU   71h   ;(-15) low voice
 
 ;;;; we converted to a random selection table, but since all voice tables
 ;    use the equates plus some offset, we ■■■e the change in the SAY_0
@@ -135,7 +175,7 @@ Voice3     EQU    71h   ;(-15) low voice
 
 Voice EQU   Voice3        ;pitch (choose Voice1, Voice2, Voice3)(voice2=norm)
 
-; Select Voice3 since it is the lwest and then add the difference to get
+; Select Voice3 since it is the lowest and then add the difference to get
 ; Voice2 or Voice 3. Here we assign that difference to an equate to be
 ; used in the voice table that is randomly selected on power up.
 
@@ -152,12 +192,12 @@ S_voice3  EQU  0  ;Voice3 + 00d = Voice3
 ; Motor_on = power to motor, Motor_off is none.
 
 
-Mpulse_on   EQU   16  ;
+Mpulse_on   EQU   16  ;	
 Mpulse_off  EQU   16  ;
 
 
-Cal_pos_fwd EQU   134    ;calibration switch forward direction
-Cal_pos_rev EQU   134    ;calibration switch forward direction
+Cal_pos_fwd EQU   134   ;calibration switch forward direction
+Cal_pos_rev EQU   134   ;calibration switch forward direction
 
 ;***********************************************************************
 ;***********************************************************************
@@ -165,68 +205,73 @@ Cal_pos_rev EQU   134    ;calibration switch forward direction
 ;***********************************************************************
 ;***********************************************************************
 ;
-;┌───────────────────────────────────────────────┐
-;│                       PORTS                   │
-;│ SPC40A has : 16 I/O pins                      │
-;│ PORT_A 4 I/O pins  0-3                        │
-;│ PORT_C 4 I/O pins  0-3                        │
-;│ PORT_D 8 I/O pins  0-7                        │
-;│                                               │
-;│                        RAM                    │
-;│                                               │
-;│ SPC40A has : 128 bytes of RAM                 │
-;│ from $80 - $FF                                │
-;│                                               │
-;│                        ROM                    │
-;│ SPC40A has :                                  │
-;│ BANK0 user ROM from $0600 - $7FFF             │
-;│ BANK1 user ROM from $8000 - $FFF9             │
-;│                                               │
-;│                                               │
-;│                        VECTORS                │
-;│ NMI   vector  $7FFA / $7FFB                   │
-;│ RESET vector  $7FFC / $7FFD                   │
-;│ IRQ   vector  $7FFE / $7FFF                   │
-;└───────────────────────────────────────────────┘
-;┌───────────────────────────────────────────────┐
-;│                       PORTS                   │
-;│ SPC120A has : 17 I/O pins                     │
-;│ PORT_A 4 I/O pins  0-3                        │
-;│ PORT_B 4 I/O pins  0,1,2,4,5                  │
-;│ PORT_C 4 I/O pins  0-3 input only             │
-;│ PORT_D 8 I/O pins  0-7                        │
-;│                                               │
-;│                         RAM                   │
-;│ SPC120A has : 128 bytes of RAM                │
-;│ from $80 - $FF                                │
-;│                                               │
-;│                         ROM                   │
-;│ SPC120A has :                                 │
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³                       PORTS                         ³
+;³ SPC40A has : 16 I/O pins                            ³
+;³ PORT_A 4 I/O pins  0-3                              ³
+;³ PORT_C 4 I/O pins  0-3                              ³
+;³ PORT_D 8 I/O pins  0-7                              ³
+;³                                                     ³
+;³                         RAM                         ³
+;³                                                     ³
+;³ SPC40A has : 128 bytes of RAM                       ³
+;³ from $80 - $FF                                      ³
+;³                                                     ³
+;³                         ROM                         ³
+;³ SPC40A has :                                        ³
+;³ BANK0 user ROM from $0600 - $7FFF                   ³
+;³ BANK1 user ROM from $8000 - $FFF9                   ³
+;³                                                     ³
+;³                                                     ³
+;³                         VECTORS                     ³
+;³ NMI   vector  $7FFA / $7FFB                         ³
+;³ RESET vector  $7FFC / $7FFD                         ³
+;³ IRQ   vector  $7FFE / $7FFF                         ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³                       PORTS                         ³
+;³ SPC120A has : 17 I/O pins                           ³
+;³ PORT_A 4 I/O pins  0-3                              ³
+;³ PORT_B 4 I/O pins  0,1,2,4,5                        ³
+;³ PORT_C 4 I/O pins  0-3 input only                   ³
+;³ PORT_D 8 I/O pins  0-7                              ³
+;³                                                     ³
+;³                         RAM                         ³
+;³ SPC120A has : 128 bytes of RAM                      ³
+;³ from $80 - $FF                                      ³
+;³                                                     ³
+;³                         ROM                         ³
+;³ SPC120A has :                                       ³
 
-;│ BANK0 user RO■■■■■■■$0600 - $7FFA             │
-;│ BANK0 user RO■■■■■■■$8000 - $FFFF             │
-;│ BANK0 user RO■■■■■■■$10000 - $17FFF           │
-;│ BANK0 user RO■■■■■■■$1A000 - $1FFFF           │
-;│                                               │
-;│                                               │
-;│                         VECTORS               │
-;│ NMI   vector  $7FFA / $7FFB                   │
-;│ RESET vector  $7FFC / $7FFD                   │
-;│ IRQ   vector  $7FFE / $7FFF                   │
-;└───────────────────────────────────────────────┘
+;³ BANK0 user RO■■■■■■■$0600 - $7FFA                   ³
+;³ BANK1 user RO■■■■■■■$8000 - $FFFF                   ³
+;³ BANK2 user RO■■■■■■■$10000 - $17FFF                 ³
+;³ BANK3 user RO■■■■■■■$1A000 - $1FFFF                 ³
+;³                                                     ³
+;³                                                     ³
+;³                         VECTORS                     ³
+;³ NMI   vector  $7FFA / $7FFB                         ³
+;³ RESET vector  $7FFC / $7FFD                         ³
+;³ IRQ   vector  $7FFE / $7FFF                         ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 
 
 ; unuseable areas in rom
 
-;SPC40A:     8000H ──  DFFFH should be skiped (Dummy area)
+;SPC40A:     8000H ÄÄ  DFFFH should be skiped (Dummy area)
 ;  bank 0 = 600 - 7FFA
 ;  bank 1 = 8000 - DFFF reserved , start @ E000 - FFFA
 
-;SPC80A:     10000H ── 13FFFH should be skiped (Dummy area)
-;  bank 0 = 
-;  bank 1 = 
-;  bank 2 = 
-;  bank 3 = 
+;SPC80A:     10000H ÄÄ 13FFFH should be skiped (Dummy area)
+;  bank 0 = 600 - 7FFA
+;  bank 1 = 8000 - FFFA
+;  bank 2 = 10000-13FFF reserved ,  start at 14000 - 17FFF
+
+;SPC120A: ;SPC120A: 18000H ÄÄ 19FFFH should be skiped (Dummy area)
+;  bank 0 = 600 - 7FFA
+;  bank 1 = 8000 - FFFA
+;  bank 2 = 10000 - 17FFF
+;  bank 3 = 18000 - 19FFF reserved ,  start at 1A000 - 1FFFA
 
 ;SPC256A: ;SPC256A: Non dummy area
 
@@ -240,18 +285,21 @@ Cal_pos_rev EQU   134    ;calibration switch forward direction
 .SYMBOLS
 
 
-;─────────────────── PORT DIRECTION CONTROL REGISTER────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ PORT DIRECTION CONTROL REGISTER
+	ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 Ports_dir       EQU     00     ; (write only)
 ;
 ; (4 I/O pins) controlled with each bit of this register
 ; you can't control each pin separately, only as a nibble
 ; 0 = input / 1 = output
 ;
-; 7       6       5       4       3       2       1       0        (REGISTER BITS)
-; D       D       C       C       B       B       A       A        (PORT)
-; 7653    3210    7654    3210    7654    3210    7654    3210     (PORT BITS)
-;───────────────────────────────────────────────────────────────────────────────────
-; ────────────────── PORT CONFIGURATION CONTROL REGISTER     ──────────────────
+; 7      6       5       4       3       2       1       0        (REGISTER BITS)
+; D      D       C       C       B       B       A       A        (PORT)
+; 7654   3210    7654    3210    7654    3210    7654    3210     (PORT BITS)
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+ÄÄÄÄÄ
+; ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ PORT CONFIGURATION CONTROL REGISTER
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 
 ;                 based on if the port pin is input or output
 ;
@@ -264,7 +312,7 @@ Ports_con       EQU     01     ; (write only)
 
 ; port_a INPUTS can be either:
 ; 0 = float   1 = pulled high
-;
+
 ; port_a OUTPUTS can be either:
 ; 0 = buffer   1 = upper (4) bits Open dran Pmos (source)
 ;                 lower (4) bits Open drain Nmos (sink)
@@ -287,9 +335,10 @@ Ports_con       EQU     01     ; (write only)
 ; port_d OUTPUTS can be either:
 ; 0 = buffer   1 = Open drain Pmos (source)
 
-;───────────────────────────────────────────────────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+ÄÄÄÄÄ
 
-;─────────────────────────── I/O PORTS    ─────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ I/O PORTSÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 
 Port_A          EQU     02H     ; (read/write) for TI & speech recgn      CPU's
 Data_D0           EQU   01H   ;bit 0 data nible port
@@ -319,20 +368,20 @@ Motor_led   EQU   20H   ;D5 - motor I.R. led driver
 Motor_lt    EQU   40H   ;D6 - motor drive left (forward)
 Motor_rt    EQU   80H   ;D7 - motor drive right (reverse)
 
-;───────────────────────────────────────────────────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 
-;──────────────────────── DATA LATCH  PORT_D   ────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ DATA LATCH  PORT_D   ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 Latch_D         EQU     06H     ; (read)
 ; read to latch data from pord_d, used for wake-up on pin change
-;───────────────────────────────────────────────────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 
-;───────────────────────── BANK SELECTION REGISTER   ──────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ BANK SELECTION REGISTER   ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 Bank            EQU     07H     ; (read/write)  x x x x x x x b
 ; 0 = bank 0, 1 = bank 1        ;               7 6 5 4 3 2 1 0
 ; only two banks in SPC40a
-;───────────────────────────────────────────────────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 
-;───────────────────────────── WAKE UP   ──────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ WAKE UP   ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 Wake_up         EQU     08H     ; (read/write) x x x x x x x w
 ;                                              7 6 5 4 3 2 1■0
 
@@ -340,17 +389,17 @@ Wake_up         EQU     08H     ; (read/write) x x x x x x x w
 ; read to see if wake-up, or normal reset
 ; this is the only source for a wake-up
 ; Always reset stack on wake up.
-;───────────────────────────────────────────────────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 
-;───────────────────────────── SLEEP   ────────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ SLEEP   ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 Sleep           EQU     09H     ; (write)      x x x x x x x s
 ;                               ;              7 6 5 4 3 2 1 0
 ;
 ; s=(0=don't care, 1=s■■■■■
 ; writting 1 to bit0, ■■■■s sleep
-;───────────────────────────────────────────────────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 
-;──────────────────────── TIMER A CONTROL REGISTER   ──────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ TIMER A CONTROL REGISTER   ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 ; this needs more work to understand DMH
 TMA_CON           EQU     0BH     ; (write)
 ;
@@ -366,9 +415,9 @@ TMA_CON           EQU     0BH     ; (write)
 ;                 Bit0: T0  ■■ IE0= 0: Counter clock= external clock from IOC2
 ;                                 = 1, T0= 0: counter clock= CPUCLK/4
 ;                                      T0= 1: counter clock= CPUCLK/64
-;───────────────────────────────────────────────────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 
-;──────────────────────────── INTERRUPTS   ────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ INTERRUPTS   ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 Interrupts      EQU     0DH    ; (read/write)
 ;
 ;        7 6 5 4 3 2 1 0
@@ -384,9 +433,9 @@ Interrupts      EQU     0DH    ; (read/write)
 ;        e = (0=external interrupt off, 1=external interrupt on)
 ;             rising edge, from port_c bit1
 
-;───────────────────────────────────────────────────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 
-;───────────────────────────── TIMERS   ───────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ TIMERS   ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 ; There are two 12bits timers.
 ; Timer A can be either a timer or a counter. (as set by TIMER_CON)
 ; Timer B can only be used as a timer.
@@ -400,16 +449,16 @@ Interrupts      EQU     0DH    ; (read/write)
 ; Counter registers can be read on-the-fly, this will not affect register,,,
 ; values, or reset them.
 ;
-;───────────────────────────────────────────────────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 
-;───────────────────────────── TIMER A (low byte)─────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ TIMER A (low byte)ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 TMA_LSB         EQU     10H     (read/write)
 ;
 ; all 8bits valid (lower 8bits of 12bit timer)
 
-;───────────────────────────────────────────────────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 
-;───────────────────────── TIMER A (high byte)   ──────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ TIMER A (high byte)   ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 TMA_MSB         EQU     11H     (read/write)
 ; read         x  x  x  x  11 10 9  8    timer upper 4bits
 ;              7  6  5  4  3  2  1  0
@@ -422,15 +471,15 @@ TMA_MSB         EQU     11H     (read/write)
 ;               the DAC■, or Timer generated square wave
 ;
 ;               c=(0=CPU clock,   1=CPU clock/4:
-;───────────────────────────────────────────────────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 
-;───────────────────────────── TIMER B (low byte)─────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ TIMER B (low byte)ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 TMB_LSB         EQU     12H
 ;
 ; all 8bits valid (lower 8bits of 12bit timer)
-;───────────────────────────────────────────────────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 
-;───────────────────────── TIMER B (high byte)   ──────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ TIMER B (high byte)   ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 TMB_MSB         EQU     13H
 ; read         x  x  x  x  11 10 9  8    timer upper 4bits
 ;              7  6  5  4  3  2  1  0
@@ -443,13 +492,13 @@ TMB_MSB         EQU     13H
 ;               the DAC2, or Timer generated square wave
 ;
 ;               c=(0=CPU clock,   1=CPU clock/4:
-;───────────────────────────────────────────────────────────────────────────────────
-;──────────────────────────  D/A converters   ─────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ  D/A converters   ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 DAC1            EQU     14H     ; (write)
 DAC2            EQU     15H     ; (write)
-;───────────────────────────────────────────────────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 
-;───────────────────────────────────────────────────────────────────────────────────
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
 ; this needs more work to understand DMH
 ;    16H    ADCoutputPort16H:
 
