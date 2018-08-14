@@ -27,13 +27,13 @@ Telephone (312) 372-7842
 
 ;╔════════════════════════════════════════════════════════════════════════════╗
 ;║                                                                            ║
-;║       SPC81A Source Code   (Version 25)                                    ║
+;║      SPC81A Source Code   (Version 25)                                     ║
 ;║                                                                            ║
-;║       Written by: Dave Hampton / Wayne Schulz                              ║
-;║       Date:       July 30, 1998                                            ║
+;║      Written by: Dave Hampton / Wayne Schulz                               ║
+;║      Date:       July 30, 1998                                             ║
 ;║                                                                            ║
-;║       Copyright (C) 1996,1997,1998 by Sounds Amazing!                      ║
-;║       All rights reserved.                                                 ║
+;║      Copyright (C) 1996,1997,1998 by Sounds Amazing!                       ║
+;║      All rights reserved.                                                  ║
 ;╚════════════════════════════════════════════════════════════════════════════╝
 ;
 ;
