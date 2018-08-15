@@ -384,3 +384,125 @@ Pos_sen            EQU   02H  ;C1 - moto______ical sensor (intt C1)
 Touch_bak     EQU  04H   ;C2 - back touch
 Touch_frnt    EQU  08H   ;C3 - front touch
 A-6
+A-7
+A-8
+A-9
+A-10
+A-11
+A-12
+A-13
+A-14
+A-15
+A-16
+A-17
+A-18
+Stacktop     EQU   FFH   ;Stack Top
+
+
+;**********************************************************************
+****;**********************************************************************
+****
+;**********************************************************************
+****
+;**********************************************************************
+****
+
+        ORG      00H
+        BLKW     300H.00H        ;Fill 0000 ÄÄÄ 05FFH- 00
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³                                                      ³
+;³       P R O G R A M     S T A R T S   H E R E        ³
+;³                                                      ³
+;ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+        ORG      0600H
+
+RESET:
+
+
+      Include          Wake2.asm    ;asm file
+
+
+;********* end Tracker
+
+
+; For power on test, WE only clear ram to E9h and use EAh for a
+; messenger to the warm boot routine. We always clear ram and initialize
+; registers on power up, but if it is a warm boot then read E_PROM
+; and setup ram locations. Location EAH is set or cleared duri___ power
+up
+; and then the stack can use it during normal run.
+
+; Clear RAM to 00H
+;----------------------------------------------------------------------
+----
+        LDA     #00H            ; data for fill
+        LDX     #E9H          ; start at ram location
+
+RAMClear:
+        STA     00,X            ; base 00, offset x
+        DEX                     ; next ram location
+        CPX     #7FH           ; check for end
+        BNE     RAMClear        ; branch, not finished
+                                ; fill done
+A-19
+;----------------------------------------------------------------------
+----
+
+Main:
+
+InitIO:
+      LDA   #01         ;turn DAC on
+      STA   DAC_ctrl    ;DAC control
+
+      LDA   #Port_def   ;set direction control
+      STA   Ports_dir   ;load reg
+
+      LDA   #Con_def    ;set configuration
+      STA   Ports_con   ;load reg
+
+      LDA   #00         ;set for bank 0
+      STA   Bank        ;set it
+      LDA   #00H        ;disable wakeup control
+      STA   Wake_UP           ;
+      LDA   #00h        ;disable sleep control
+      STA   Sleep       ;set dont care
+
+        LDA     #Intt_dflt    ;Initialize timers, etc.
+        STA     Interrupts    ;load reg
+
+        LDA     #00H          ;set timer mode
+        STA     TMA_CON       ;set reg
+      LDA   #TimeA_low  ;get preset timer for interrupts
+      STA   TMA_LSB            ;load
+
+      LDA   #TimeA_hi   ;get hi byte for preset
+      STA   TMA_MSB           ;load it
+
+      LDA   #TimeB_low  ;get preset timer for interrupts
+      STA   TMB_LSB           ;load
+      LDA   #TimeB_hi   ;get hi byte for preset
+      STA   TMB_MSB           ;load it
+
+      LDA   #C0h        ;preset status for motors off
+      STA   Stat_3            ;
+      LDA   #00h        ;init ports
+      STA   Port_A            ;output
+
+      LDA   #33H        ;init ports
+      STA   Port_B_Image      ;ram image
+      STA   Port_B            ;output
+
+      LDA   #0_H        ;init ports
+      STA   Port_C            ;output
+
+      LDA   #D0H        ;init ports
+      STA   Port_D_Image      ;ram image
+      STA   Port_D            ;output
+
+      LDA   #FFh        ;milisec timer reload value
+      STA   Mili_sec    ;also preset IRQ timer
+
+        CLI             ;Enable IRQ
+A-20
