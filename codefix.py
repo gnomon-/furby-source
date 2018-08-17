@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 # This tool can be used to correct the codepage/line width mismatch seen in the scanned code.
 # By SopaXorzTaker
 
