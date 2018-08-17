@@ -5,6 +5,7 @@
 ## Claims
 
 - [ ] (2018-08-15, [@gnomon-][gh-@gnomon-]) p. **A-7**
+- [ ] (2018-08-16, [@belimoth][gh-@belimoth]) p. **60 - 79**
 
 [gh-@gnomon-]:
   https://github.com/gnomon-/
