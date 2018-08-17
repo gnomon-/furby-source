@@ -21,7 +21,7 @@ with open(argv[1], "r") as infile:
     i = 0
     new_lines = []
 
-    # Fix 80-line text printed in 72
+    # Fix 80-column text printed in 72
     while i < len(lines):
         line = lines[i]
 
