@@ -92,9 +92,9 @@ device.
 ## Todo
 
 - [ ] transcribe all 297 pages
-- [ ] correct CP1252/CP437 transliteration errors
-  - [ ] ...with a programmatic transformation step
-- [ ] correct column 72 / column 80 wrapping errors
-  - [ ] ...with a programmatic transformation step
+- [x] correct CP1252/CP437 transliteration errors
+  - [x] ...with a programmatic transformation step
+- [x] correct column 72 / column 80 wrapping errors
+  - [x] ...with a programmatic transformation step
 - [ ] identify an assembler that can (attempt to) compile the source
 - [ ] figure out what kind of license makes sense for this..?
