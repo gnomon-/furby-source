@@ -788,3 +788,791 @@ No_zero:
 
 ;************************************************************
 A-25
+;ÈÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+;* 'IDLE Routine                                       *
+;ÈÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+;
+
+Idle: 
+
+; Idle routine is the time slice task master (TSTM) ugh!
+; We must call each routine and interleave with a call to speech
+; to insure we never miss a TI request for data.
+      
+      JSR   Notrdy            ;Do / get status for speech and motor
+
+;************************************************************
+; This bit is set when light sensor is darker than 'Dark_sleep'
+
+      LDA   Stat_0            ;system.
+      AND   #REQ_dark_sleep   ;ck for req
+      BEQ   No_dark_req ;jump if not
+
+      LDA   Stat_0            ;system
+      AND   #BFh        ;kill req
+      STA   Stat_0            ;update
+
+      LDA   #A6h        ;sleep macro
+      STA   Macro_Lo
+      LDA   #OOh        ;sleep macro
+      STA   Macro_Hi    ;
+      JMP   Start_macro ;go say it
+
+No_dark_req:
+
+;************************************************************
+
+; When any sensor or timer calls the *start_macro* routine, the
+; Macro_Lo & Macro_Hi are saved. Everyone jumps back to Idle and when
+; speech/motor routines are finished, this routine will look at the
+; macros that were used and execute another function if a match is
+found.
+;
+; Checks for his name first, then any IR to send, and finally, the sleep
+; commands. The temp macro buffers are cleared before
+
+
+;
+Spcl_Namel:
+      LDX   #00         ;offset
+Spcl_Name2:
+      LDA   Ck_Name_table,X   ;ck lo byte
+      CMP   #FFh        ;ck for end of table (note 255 cant execute)
+      BEQ   Spcl_IR1    ;done if is
+      CMP   Req_macro_lo      ;ck against last speech request
+      BNE   Not_Name2   ;jump if not
+      INX               ;to hi byte
+      LDA   Ck_Name_table,X   ;ck hi byte
+      CMP   Req_macro_hi      ;ck against lasspeech request
+A-26
+      BNE   Not_Name3   ;jump if not
+      JMP   Say_Sname   ;speak it
+Not_Name2:
+      INX               ;
+Not_Nama3:
+      INX               ;
+      JMP   Spcl_Name2  ;loop til done
+
+Say_Sname:
+      LDA   Stat_0
+      AND   #DFh        ;kill req for startup new name
+      STA   Stat_0            ;update
+
+      LDA   Name        ;current setting for table offset
+      CLC
+      ROL   A           ;2's comp
+      TAX
+      LDA   Name_table,X      ;get lo byte
+      STA   Macro_Lo    ;save lo byte of Macro table entry
+      INX               ;
+      LDA   Name table,X      ;get hi byte
+      STA   Macro_Hi    ;save hi byte of Macro table entry
+      JSR   Get_macro   ;go start motor/speech
+      JSR   Notrdy            ;Do / get status for speech and motor
+;
+Spcl_IR1:
+      LDX   #00         ;offset
+Spcl_IR2:
+      LDA   IRxmit_table,X    ;ck lo byte
+      CMP   #FFh        ;ck for end of table (note 255 cant execute)
+      BEQ   Spcl_IR_dn  ;done if is
+      CMP   Req_macro_lo      ;ck against last speech request
+      BNE   Not_IRxmit2 ;jump if not
+      INX               ;to hi byte
+      LDA   IRxmit_table,X    ;ck hi byte
+      CMP   Req_macro_hi      ;ck against last speech request
+      BNE   Not_IRxmit3 ;jump if not
+      INX               ;point to IR table
+      LDA   IRxmit_table,X    ;
+      STA   TEMP2       ;xmit temp ram
+      LDA   #FDh        ;TI command for IR xmit
+      STA   TEMP1       ;
+      JSR   Xmit_TI           ;go send it
+
+      LDA   #Bored_reld ;reset bored timer
+      STA   Bored_timer ;
+
+      LDA   #03         ;set timer
+      STA   Last_IR           ;timer stops IR from hearing its own IR
+xmit
+      JMP   Spcl_IR_dn  ;done - ola ......
+Not_IRxmit2:
+      INX               ;lo byte
+Not_IRxmit3:
+      INX               ;hi byte
+      INX               ;xmit pointer
+      JMP   Spcl_IR2    ;loop til done
+Spcl_IR_dn:
+;
+A-27
+;
+Spcl_macrol:
+      LDX   #00         ;offset
+Spcl_sleepl:
+      LDA   Sleepy_table,X    ;ck lo byte
+      CMP   #FFh        ;ck for end of table (note 255 cant execute)
+      BEQ   Ck_macro_dn ;done if is
+      CMP   Req_macro_lo      ;ck against last speech request
+      BNE   Not_sleepy2 ;jump if not
+      INX               ;to hi byte
+      LDA   Sleepy_table,X    ;ck hi byte
+      CMP   Req_macro_hi      ;ck against last speech request
+      BNE   Not_sleepy_ ;jump if not
+      LDA   #00         ;clear macro pointers for wake up
+      STA   Req_macro_lo
+      STA   Req_macro_hi
+
+;mod F-rels2 ;
+;   Before going to sleep send sleep cmnd to all others.
+
+      LDA   #15         ;
+      STA   TEMP2       ;xmit temp ram
+      LDA   #FDh        ;TI command for IR xmit
+      STA   TEMP1       ;
+      JSR   Xmit_TI           ;go send it
+
+;need to wait >600 milisec before going to sleep because we arent using
+;busy flags from TI and need to make sure it is done transmitting the
+;I.R. code, the sleep routine kills the TI and it would never send the
+cmnd.
+
+      LDA   #25         ;how many 30 milisec cycles to call
+      JSR   Half_delay  ;do 30milisec delay cycles
+
+;end mod
+
+      JMP   GoToSleep   ;nity-night
+
+Not_sleepy2:
+      INX               ;
+Not_sleepy3:
+      INX               ;
+      JMP   Spcl_sleep1 ;loop til done
+;
+Ck_macro_dn:
+      LDA   #00         ;clear macro pointers for wake up
+      STA   Req_macro_lo
+      STA   Req_macro_hi
+      JMP   Test_new_name     ;on to task master
+;
+
+;;;;;;; SLEEP TABLE & IR table ..... MOVE TO INCLUDE FILE LATER
+
+Sleepy_table:
+      DW    91    ;hangout
+
+      DW    166   ;wake up
+      DW    167   ;wake up
+      DW    166   ;wake up
+      DW    169   ;wake up
+A-28
+      DW    258   ;Back sw
+      DW    259   ;Back sw
+      DW    260   ;Back sw
+
+      DW    403   ;IR
+      DW    413   ;IR
+      DW    429   ;IR
+
+      DB    FFh,FFh     ;FF FF is table terminator
+
+IRxmit_table:
+      DW     .    ;trigger macro
+      DB    00    ;which IR command to call ( 0 - 0f )
+      DW    13    ;trigger macro
+      DB    00    ;which IR command to call ( 0 - 0f )
+      DW    17    ;trigger macro
+      DB    00    ;which IR command to call ( 0 - 0f )
+      DW    19    ;trigger macro
+      DB    00    ;which IR command to call ( 0 - 0f )
+      DW    26    ;trigger macro
+      DB    00    ;which IR command to call ( 0 - 0f )
+      DW    29    ;trigger macro
+      DB    00    ;which IR command to call ( 0 - 0f )
+      DW    33    ;trigger macro
+      DB    00    ;which IR command to call ( 0 - 0f )
+      DW    34    ;trigger macro
+      DB    00    ;which IR command to call ( 0 - 0f )
+      DW    44    ;trigger macro
+      DB    00    ;which IR command to call ( 0 - 0f )
+      DW    45    ;trigger macro
+      DB    00    ;which IR command to call ( 0 - 0f )
+      DW    48    ;trigger macro
+      DB    00    ;which IR command to call ( 0 - 0f )
+      DW    50    ;trigger macro
+      DB    00    ;which IR command to call ( 0 - 0f )
+      DW    55    ;trigger macro
+      DB    00    ;which IR command to call ( 0 - 0f )
+      DW    60    ;trigger macro
+      DB    00    ;which IR command to call ( 0 - 0f )
+      DW    149   ;from rooster wake up
+      DB    00    ;
+
+      DW    352   ;trigger macro
+      DB    01    ;which IR command to call ( 0 - 0f )
+      DW    363   ;trigger macro
+      DB    01    ;which IR command to call ( 0 - 0f )
+      DW    393   ;trigger macro
+      DB    01    ;which IR command to call ( 0 - 0f )
+
+      DW    248   ;trigger macro
+      DB    02    ;which IR command to call ( 0 - 0f )
+      DW    313   ;trigger macro
+      DB    02    ;which IR command to call ( 0 - 0f )
+
+      DW    86    ;trigger macro
+      DB    03    ;which IR command to call ( 0 - 0f )
+      DW    93    ;trigger macro
+      DB    03    ;which IR command to call ( 0 - 0f )
+      DW    339   ;trigger macro
+A-29
+      DB    03    ;which IR command to call ( 0 - 0f )
+      DW    344   ;trigger macro
+      DB    03    ;which IR command to call ( 0 - 0f )
+      DW    351   ;trigger macro
+      DB    03    ;which IR command to call ( 0 - 0f )
+
+      DW    404   ;trigger macro
+      DB    04    ;which IR command to call ( 0 - 0f )
+      DW    405   ;trigger macro
+      DB    04    ;which IR command to call ( 0 - 0f )
+
+      DW    293   ;trigger macro
+      DB    05    ;which IR command to call ( 0 - 0f )
+      DW    394   ;trigger macro
+      DB    05    ;which IR comnand to call ( 0 - 0f )
+      DW    406   ;trigger macro
+      DB    05    ;which IR command to call ( 0 - 0f )
+      DW    414   ;trigger macro
+      DB    05    ;which IR command to call ( 0 - 0f )
+      DW    422   ;trigger macro
+      DB    05    ;which IR command to call ( 0 - 0f )
+
+      DW    395   ;trigger macro
+      DB    06    ;which IR comnand to call ( 0 - 0f )
+      DW    421   ;trigger macro
+      DB    06    ;which IR command to call ( 0 - 0f )
+      DW    423   ;trigger macro
+      DB    06    ;which IR command to call ( 0 - 0f )
+
+      DW    296   ;trigger macro
+      DB    07    ;which IR command to call ( 0 - 0f )
+      DW    415   ;trigger macro
+      DB    07    ;which IR command to call ( 0 - 0f )
+      DW    416   ;trigger macro
+      DB    07    ;which IR command to call ( 0 - 0f )
+
+      DW    288   ;trigger macro
+      DB    08    ;which IR command to call ( 0 - 0f )
+
+      DW    11    ;trigger macro
+      DB    09    ;which IR command to call ( 0 - 0f )
+      DW    12    ;trigger macro
+      DB    09    ;which IR command to call ( 0 - 0f )
+      DW    27    ;trigger macro
+      DB    09    ;which IR command to call ( 0 - 0f )
+      DW    42    ;trigger macro
+      DB    09    ;which IR command to call ( 0 - 0f )
+      DW    57    ;trigger macro
+      DB    09    ;which IR command to call ( 0 - 0f )
+      DW    235   ;trigger macro
+      DB    09    ;which IR command to call ( 0 - 0f )
+      DW    236   ;trigger macro
+      DB    09    ;which IR command to call ( 0 - 0f )
+      DW    237   ;trigger macro
+      DB    09    ;which IR command to call ( 0 - 0f )
+      DW    238   ;trigger macro
+      DB    09    ;which IR command to call ( 0 - 0f )
+      DW    261   ;trigger macro
+      DB    09    ;which IR command to call ( 0 - 0f )
+      DW    262   ;trigger macro
+A-30
+      DB    09    ;which IR command to call ( 0 - 0f )
+      DW    396   ;trigger macro
+      DB    09    ;which IR command to call ( 0 - 0f )
+      DW    409   ;trigger macro
+      DB    09    ;which IR command to call ( 0 - 0f )
+
+      DW    399   ;trigger macro
+      DB    10    ;which IR command to call ( 0 - 0f )
+      DW    407   ;trigger macro
+      DB    10    ;which IR command to call ( 0 - 0f )
+      DW    408   ;trigger macro
+      DB    10    ;which IR command to call ( 0 - 0f )
+
+      DW    272   ;trigger macro
+      DB    11    ;which IR command to call ( 0 - 0f )
+      DW    273   ;trigger macro
+      DB    11    ;which IR command to call ( 0 - 0f )
+      DW    274   ;trigger macro
+      DB    11    ;which IR command to call ( 0 - 0f )
+      DW    275   ;trigger macro
+      DB    11    ;which IR command to call ( 0 - 0f )
+      DW    400   ;trigger macro
+      DB    11    ;which IR command to call ( 0 - 0f )
+      DW    418   ;trigger macro
+      DB    11    ;which IR command to call ( 0 - 0f )
+      DW    425   ;trigger macro
+      DB    11    ;which IR command to call ( 0 - 0f )
+      DW    426   ;trigger macro
+      DB    11    ;which IR command to call ( 0 - 0f )
+
+      DW    336   ;trigger macro
+      DB    12    ;which IR command to call ( 0 - 0f )
+      DW    342   ;trigger macro
+      DB    12    ;which IR command to call ( 0 - 0f )
+      DW    401   ;trigger macro
+      DB    12    ;which IR command to call ( 0 - 0f )
+
+      DW    92    ;trigger macro
+      DB    13    ;which IR command to call ( 0 - 0f )
+      DW    411   ;trigger macro
+      DB    13    ;which IR command to call ( 0 - 0f )
+      DW    419   ;trigger macro
+      DB    13    ;which IR command to call ( 0 - 0f )
+      DW    427   ;trigger macro
+      DB    13    ;which IR command to call ( 0 - 0f )
+
+      DW    291   ;trigger macro
+      DB    14    ;which IR command to call ( 0 - 0f )
+      DW    402   ;trigger macro
+      DB    14    ;which IR command to call ( 0 - 0f )
+      DW    412   ;trigger macro
+      DB    14    ;which IR command to call ( 0 - 0f )
+      DW    428   ;trigger macro
+      DB    14    ;which IR command to call ( 0 - 0f )
+
+      DW    256   ;trigger macro
+      DB    15    ;which IR command to call ( 0 - 0f )
+      DW    257   ;trigger macro
+      DB    15    ;which IR command to call ( 0 - 0f )
+      DW    420   ;trigger macro
+A-31
+      DB    15    ;which IR command to call ( 0 - 0f )
+;mod F-rels2 ; send sleep if recv sleep on IR
+      DW    403   ;trigger macro
+      DB    15    ;which IR command to call ( 0 - 0f )
+      DW    413   ;trigger macro
+      DB    15    ;which IR command to call ( 0 - 0f )
+; end mod
+
+      DB    FFh,FFh     ;FF FF   is table terminator
+
+
+Ck_Name_table:
+
+      DW    97
+      DW    248
+      DW    393
+      DW    414
+      DW    149
+      DW    305
+      DW    404
+      DW    421
+      
+      DB    FFh,FFh     ;FF FF   is table terminator
+
+
+;***********************************************************
+
+; Say name
+
+Test_new_name:
+      
+      LDA   Stat_0            ;system
+      AND   #Say_new_name     ;make system say new name
+      BEQ   Nosayname   ;bypass if clear
+      LDA   Stat_0
+      AND   #DFh        ;kill req for startup new name
+      STA   Stat_0            ;update
+
+      LDA   Name        ;current setting for table offset
+      CLC   
+      ROL   A           ;2's comp
+      TAX   
+      LDA   Name_table,X      ;get lo byte
+      STA   Macro_Lo    ;save lo byte of Macro table entry
+      INX               ;
+      LDA   Name_table,X      ;get hi byte
+      STA   Macro_Hi    ;save hi byte of Macro table entry
+      JSR   Get_macro   ;go start motor/speech
+      JSR   Notrdy            ;Do / get status for speech and motor
+
+Nosayname:
+
+
+;***************************************************
+;
+;
+; ***** below routines run at 742 mSec loops
+; Timer B sets 'Milisec_flag' each 742 miliseconds
+A-32
+Updt_timer:
+      LDA   Milisec_flag      ;if >0 then 742 mili seconds have passed
+      BEQ   TimerL_dn   ;bypass if 0
+      LDA   #00         ;clear it
+      STA   Milisec_flag      ;reset
+
+      LDA   Sensor_timer      ;get current timer * 742mSec sec
+      BEQ   TimerL1           ;do nothing if 0
+      DEC   Sensor_timer      ;-1
+TimerL1:
+      LDA   Light_timer ;get current timer * 742mSec sec
+      BEQ   TimerL2           ;do nothing if 0
+      DEC   Light_timer ;-1
+TimerL2:
+      LDA   Sound_timer ;get current timer * 742mSec sec
+      BEQ   TimerL3           ;do nothing if 0
+      DEC   Sound_timer ;-1
+TimerL3:
+      LDA   Bored_timer ;get current timer * 742mSec
+      BEQ   TimerL4           ;do nothing if 0
+      DEC   Bored_timer ;-1
+TimerL4:
+      LDA   Last_IR           ;get current timer * 742mSec
+      BEQ   TimerL5           ;do nothing if 0
+      DEC   Last_IR           ;-1
+TimerL5:
+
+TimerL_dn:
+
+      INC   Task_ptr    ;-1
+      LDA   Task_ptr    ;get it
+      CLC
+      SBC   #08         ;ck if off end
+      BCC   Ck_tsk_A    ;jump if <9
+      LDA   #01         ;reset pointer
+      STA   Task_ptr    ;
+
+Ck_tsk_A:
+
+; If too sick then no game play...
+
+      CLC               ;
+      LDA   Sick_counter      ;how sick is he
+      SBC   #Really_sick      ;
+      BCS   Ck_task_egg ;do egg if not
+      JMP   Ck_bored    ;bypass if too sick
+
+
+; Scan all game mode pointers to determine if any are active.
+; Continue to execute the first active game found, and that game always
+; allows the task list to be scaned for sensor input. If no games are
+; active, than check task 0 to determine if the correct sensor sequence
+; is occuring which will initiate tha next game.
+
+Ck_task_egg:
+
+      LDA   Game_1            ;get game active bits
+      ROR   A           ;move bit 0 to carry
+      BCC   Ck_g2       ;check next if not activ
+A-33
+      JMP   Game_fortune      ;jump if active
+Ck_g2:
+      ROR   A           ;bit 1
+      BCC   Ck_g3       ;check next if not activ
+      JMP   Game_Rap    ;jump if active
+Ck_g3:
+      ROR   A           ;bit 2
+      BCC   Ck_g4       ;check next if not activ
+      JMP   Game_hideseek     ;jump if active
+Ck_g4:
+      ROR   A           ;bit 3
+      BCC   Ck_g5       ;check next if not activ
+      JMP   Game_simon  ;jump if active
+Ck_g5:
+      ROR   A           ;bit 4
+      BCC   Ck_g6       ;check next if not activ
+      JMP   Game_Burp   ;jump if active
+Ck_g6:
+      ROR   A           ;bit 5
+      BCC   Ck_g7       ;check next if not activ
+      JMP   Game_name   ;jump if active
+Ck_g7:
+      ROR   A           ;bit 6
+      BCC   Ck_g8       ;check next if not activ
+      JMP   Game_twinkle      ;jump if active
+Ck_g8:
+      ROR   A           ;bit 7
+      BCC   Ck_g9       ;check next if not activ
+      JMP   Game_rooster      ;jump if active
+
+Ck_g9:
+
+
+;  non activ
+;
+;;*************************
+
+
+; Task 0 : scans all active requests from sensors looking for a trigger.
+; If any are set then scan through the game select tables for each game
+; looking for a match, and increment the counter each time a succesive
+; match is found. If one is not in sequence, then that counter is reset
+to
+; zero. Since all counters are independent, then the first one to
+completion
+; wins and all others are zeroed.
+;
+; All sensor triggers are in one status byte so we can create a number
+; based on who has been triggered (we ignore the I.R. sensor).
+; The following bits are in Stat_4 and are set when they are triggered
+; by the individual sensor routines :
+
+; 00 = none
+; 01 = Loud sound
+; 02 = Light change brighter
+; 04 = Light change darker
+; 08 = Front tummy switch
+; 10 = Back switch
+; 20 = Feed switch
+; 40 = Tilt switch
+A-34
+; 80 = Invert switch
+
+; We assign a single bit per game or egg senario. Each time a
+; sensor is triggered, we increment the counter and test all eggs for
+; a match. If a particular sensor doesnt match, then set its
+disqualified
+; bit and move on. If at any time all bits are set, then clear counter
+to
+; zero and start over. When a table gets an FF then that egg is
+executed.
+; Each time a sensor is triggered, the system timer is reset. This timer
+; called 'Sensor_timer' is reset with 'Global_time' equate. This timer is
+also
+; used for the random sequential selection of sensor responses. If this
+; timer goes to zero before an egg is complete, ie, Furby has not been
+played
+; with, then clear all disqualified bits and counters.
+
+; Currently there are 24 possible eggs. (3 bytes)
+
+;Qualify1:
+;DQ_fortune EQU   01    ;bit 0 = fortune teller
+;DQ_rap           EQU   02    ;bit 1 = rap song
+;DQ_hide    EQU   04    ;bit 2 = hide and seek
+;DQ_simon   EQU   08    ;bit 3 = simon says
+;DQ_burp    EQU   10    ;bit 4 = burp attack
+;DQ_name    EQU   20    ;Lit 5 = say name
+;DQ_twinkle EQU   40    ;bit 6 = sing song
+;DQ_rooste  EQU   80    ;bit 7 = rooster-love you
+
+;Qualify2: removed due to lack of RAM
+;     bit 0 =
+;     bit 1 =
+;     bit 2 =
+;     bit 3 =
+;     bit 4 =
+;     bit 5 =
+;     bit 6 =
+;     bit 7 =
+
+
+; Test triggers here
+
+
+; Test triggers here
+
+Ck_game:
+;     LDA   Sensor_timer      ;ck if no action for a while
+      LDA   Bored_timer ;ck if no action for a while
+      BNE   Ck_gamactv  ;jump if system active
+      JSR   Clear_games ;go reset all other triggers and game pointers
+Ck_gamactv:
+      LDA   Qualify1    ;test if all are disqualified
+      CMP   #FFh        ;compare activ bits only
+      BNE   Ck_anysens  ;jump if some or all still active
+;     LDA   Qualify2    ;test if all are disqualified
+;     CMP   #00h        ;compare activ bits only
+;     BNE   Ck_anysens  ;jump if some or all still active
+      JSR   Clear_games ;go reset all other triggers and game pointers
+Ck_anysens:
+      LDA   Stat_4            ;ck if any sensor is triggered
+      BNE   Ck_gam1           ;go ck games if any set
+      JMP   Ck_bored    ;bypass if none
+A-35
+;
+Ck_gam1:    ;fortune teller
+      LDX   Egg_cnt           ;get current count
+      LDA   Qualify1    ;update game qualification
+      AND   #DQ_fortune ;check if dis-qualified bit
+      BNE   Ck_gam2           ;bail out if is
+      LDA   Fortune_table,X   ;get current data
+      AND   Stat_4            ;compare against sensor trigger
+      BNE   Ck_gam1a    ;if set then good compare
+      LDA   Qualify1    ;update game qualification
+      ORA   #DQ_fortune ;set dis-qualified bit
+      STA   Qualify1    ;update system
+      JMP   Ck_gam2           ;check next egg
+Ck_gam1a:
+      LDA   Fortune_table+1,X ;get current +1 to see if end of egg
+      CMP   #FFh        ;test if end of table and start of game
+      BNE   Ck_gam2           ;jump if not at end
+      JSR   Clear_games ;go reset all other triggers and gome painters
+      LDA   Game_1            ;get system
+      ORA   #Fortune_mode     ;start game mode
+      STA   Game_1            ;update
+      JMP   Idle        ;done
+;
+Ck_gam2:    ; Rap mode
+      LDA   Qualify1    ;update game qualification
+      AND   #DQ_rap           ;check if dis-qualified bit
+      BNE   Ck_gam3           ;bail out if is
+      LDA   Rap_table,X ;get current data
+      AND   Stat_4            ;compare against sensor trigger
+      BNE   Ck_gam2a    ;if set then good compare
+      LDA   Qualifyl    ;update game qualification
+      ORA   #DQ_rap           ;set dis-qualified bit
+      STA   Qualify1    ;update system
+      JMP   Ck_gam3           ;check next egg
+Ck_gam2a:
+      LDA   Rap_table+1,X     ;get current data ♦ ! to see if end of egg
+      CMP   #FFh        ;test if end of table and start of game
+      BNE   Ck_gam3           ;jump if not at end
+      JSR   Clear_games ;go reset all other triggers and game pointers
+      LDA   Game_1            ;get system
+      ORA   #Rap_mode   ;start game mode
+      STA   Game_1            ;update
+      JMP   Idle        ;done
+;
+Ck_gam3:    ; Hide and seek
+      LDA   Qualify1    ;update game qualification
+      AND   #DQ_hide    ;check if dis-qualified bit
+      BNE   Ck_gam4           ;bail out if is
+      LDA   Hseek_table,X     ;get current data
+      AND   Stat_4            ;compare against sensor trigger
+      BNE   Ck_gam3a    ;if set then good compare
+      LDA   Qualify1    ;update game qualification
+      ORA   #DQ_hide    ;set dis-qualifiad bit
+      STA   Qualify1    ;update system
+      JMP   Ck_gam4           ;check next egg
+Ck_gam3a:
+      LDA   Hseek_table+1,X   ;get current data +1 to see if end of egg
+      CMP   #FFh        ;test if end of table and start of game
+      BNE   Ck_gam4           ;jump if not at end
+      JSR   Clear_games ;go reset all other triggers and game pointers
+A-36
+      LDA   Game_1            ;get system
+      ORA   #Hideseek_mode    ;start game mode
+      STA   Game_1            ;update
+      JMP   Idle        ;done
+;
+Ck_gam4:    ; Simon says
+      LDA   Qualify1    ;update game qualification
+      AND   #DQ_simon   ;check if dis-qualified bit
+      BNE   Ck_gam5           ;bail out if is
+      LDA   Simon_table,X     ;get current data
+      AND   Stat_4            ;compare against sensor trigger
+      BNE   Ck_gam4a    ;if set then good compare
+      LDA   Qualify1    ;update game qualification
+      ORA   #DQ_simon   ;set dis-qualified bit
+      STA   Qualifyl    ;update system
+      JMP   Ck_gam5           ;check next egg
+Ck_gam4a:
+      LDA   Simon_table+1,X   ;get current data +1 to see if end of egg
+      CMP   #FFh        ;test if end of table and start of game
+      BNE   Ck_gam5           ;jump if not at end
+      JSR   Clear_games ;go reset all other triggers and game pointers
+      LDA   Game_1            ;get system
+      ORA   #Simonsay_mode    ;start game mode
+      STA   Game_1            ;update
+      LDA   #00         ;clear all pointers
+      STA   Stat_5            ;system
+      JMP   Idle        ;done
+
+Ck_gam5:    ; Burp attack
+      LDA   Qualify1    ;update game qualification
+      AND   #DO_burp    ;check if dis-qualified bit
+      BNE   Ck_gam6           ;bail out if is
+      LDA   Burp_table,X      ;get current data
+      AND   Stat_4            ;compare against sensor trigger
+      BNE   Ck_gam5a    ;if set then good compare
+      LDA   Qualify1    ;update game qualification
+      ORA   #DQ_burp    ;set dis-qualified bit
+      STA   Qualifyl    ;update system
+      JMP   Ck_gam6           ;check next egg
+Ck_gam5a:
+      LDA   Burp_table+1,X    ;get current data +1 to see if end of egg
+      CMP   #FFh        ;test if end of table and start of game
+      BNE   Ck_gam6           ;jump if not at end
+      JSR   Clear_games ;go reset all other triggers and game pointers
+      LDA   Game_1            ;get system
+      ORA   #Burp_mode  ;start game mode
+      STA   Game_1            ;update
+      LDA   #00         ;clear all pointers
+      STA   Stat_5            ;system
+      JMP   Idle        ;done
+
+Ck_gam6:    ; say name
+      LDA   Qualify1    ;update game qualification
+      AND   #DQ_name    ;check if dis-qualified bit
+      BNE   Ck_gam7           ;bail out if is
+      LDA   Name_egg,X  ;get current data
+      AND   Stat_4            ;compare against sensor trigger
+      BNE   Ck_gam6a    ;if set then good compare
+      LDA   Qualify1    ;update game qualification
+      ORA   #DQ_name    ;set dis-qualified bit
+A-37
+      STA   Qualify1    ;update system
+      JMP   Ck_gam7           ;check next egg
+Ck_gam6a:
+      LDA   Name_egg*l,X      ;get current data +1 to see if end of egg
+      CMP   #FFh        ;test if end of table and start of game
+      BNE   Ck_gam7           ;jump if not at end
+      JSR   Clear_games ;go reset all other triggers and game pointers
+      LDA   Game_1            ;get system
+      ORA   #Name_mode  ;start game mode
+      STA   Game_1            ;update
+      LDA   #00         ;clear all pointers
+      STA   Stat_5            ;system
+      JMP   Idle        ;done
+
+Ck_gam7:    ; twinkle song
+      LDA   Qualify1    ;update game qualification
+      AND   #DQ_twinkle ;check if dis-qualified bit
+      BNE   Ck_gam8           ;bail out if is
+      LDA   Twinkle_egg,X     ;get current data
+      AND   Stat_4            ;compare against sensor trigger
+      BNE   Ck_gam7a    ;if set then good compare
+      LDA   Qualify1    ;update game qualification
+      ORA   #DQ_twinkle ;set dis-qualified bit
+      STA   Qualifyl    ;update system
+      JMP   Ck_gam8           ;check next egg
+Ck_gam7a:
+      LDA   Twinkle_egg+1,X   ;get current data +1 to see if end of egg
+      CMP   #FFh        ;test if end of table and start of game
+      BNE   Ck_gam8           ;jump if not at end
+      JSR   Clear_games ;go reset all other triggers and game pointers
+      LDA   Game_1            ;get system
+      ORA   #Twinkle_mode     ;start game mode
+      STA   Game_1            ;update
+      LDA   #00         ;clear all pointers
+      STA   Stat_5            ;system
+      JMP   Idle        ;done
+
+Ck_gam8:    ; rooster loves you
+      LDA   Qualify1    ;update game qualification
+      AND   #DQ_rooster ;check if dis-qualified bit
+      BNE   Ck_gam9           ;bail out if is
+      LDA   Rooster_egg,X     ;get current uata
+      AND   Stat_4            ;compare against sensor trigger
+      BNE   Ck_gam8a    ;if set then good compare
+      LDA   Qualify1    ;update game qualification
+      ORA   #DQ_rooster ;set dis-qualified bit
+      STA   Qualify1    ;update system
+      JMP   Ck_gam9           ;check next egg
+Ck_gam8a:
+LDA         Rooster_egg+1,X   ;get current data *1 to see if end of egg
+CMP         #FFh        ;test if end of table and start of game
+BNE         Ck_gam9           ;jump if not at end
+JSR         Clear_games ;go reset all other triggers and game pointers
+LDA         Game_l            ;get system
+ORA         #Rooster_mode     ;start game mode
+STA         Game_l            ;update
+LDA         #00         ;clear all pointers
+STA         Stat_5            ;system
+JMP         Idle        ;done
+A-38
+A-39
+A-40
