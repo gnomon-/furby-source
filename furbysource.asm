@@ -507,3 +507,284 @@ InitIO:
 
         CLI             ;Enable IRQ
 A-20
+      JSR   Kick_IRQ    ;wait for interrupt to restart
+      JSR   TI_reset    ;go init TI (uses 'Cycle_timer')
+
+; Preset motor speed, assuming mid battery life, we eat the pulse width
+; so that the motor wont be runing at 6 volts and burn out. We then
+; predict what the pulse width should be for any voltage.
+
+;     LDA   #Mpulse_on  ;preset motor speed
+      LDA   #ll
+      STA   Mon_len           ;set motor on pulse timing
+
+      LDA   #05         ;
+      STA   Moff_len    ;
+
+;ÈÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ_____ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+;* 'Diagnostics and celibration Routine                   *
+;ÈÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ_ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+;
+
+      Include           Dieg7.asm   ;asm file
+
+; ****** Only called by diagnostic speech routines *********
+
+; Be sure to set 'MACRO_HI' and all calls are in that 128 byte block.
+
+Dieg_macro:
+      STA   Macro_Lo    ;save lo byte of Macro table entry
+        LDA     #0b8h   ;#90h            ;_ex offset to adrs_400 added
+to diag call
+      CLC
+      ADC   Macro_Lo    ;add in offset
+      STA   Macro_Lo    ;update
+      LDA   #01         ;get hi byte adrs 400 = 190h
+      STA   Macro_Hi    ;save hi byte of Macro table entry
+      JSR   Get_marcro  ;go start motor/speech
+      JSR   Notrdy            ;Do / get status for speech and motor
+      RTS               ;yo
+
+
+; Enter with Areg holding how many 30 mili second delay cycles
+
+Half_delay
+      STA   TEMP1       ;save timer
+Half d2:
+      LDA   #10         ;set 1/2 sec      (y * 2.9 mSec)
+      STA   Cycle_timer ;set it
+Half_d3:
+      LDA   Cycle_timer ;ck if done
+      BNE   Half_d3           ;loop
+      DEC   TEMP1       ;
+      BNE   Half_d2           ;loop
+      RTS               ;done
+A-21
+Test_byp:   ;We assume diagnostic only runs on coldboot
+
+;***************************************************************
+      
+      LDA   #FFh        ;initialize word training variable
+      STA   Temp_ID           ;
+
+      LDA   #FFh        ;
+      STA   Hungry_counter    ;preset furby's health
+      STA   Sick_counter
+
+;***********************************************************
+
+; We sit here and wait for tilt to go away, and just keep incrementing
+; counter until it does. This becomes the new random generator seed.
+
+Init_rnd:
+      INC   TEMP1       ;random counter
+      LDA   Port_D            ;get switches
+      AND   #03         ;check tilt & invert sw
+      BNE   Init_rnd    ;loop til gone
+      LDA   TEMP1       ;get new seed
+      STA   Spcl_seed1  ;stuff it
+      STA   Seed_1            ;also load for cold boot
+;*************************************************************
+
+; Use fee sw to generate a better random number
+
+      JSF   Get_feed    ;go test sensor
+      LDA   Stat_4            ;get system
+      AND   #Do_feed    ;ck sw
+      BNE   Feed_rnd    ;if feed sw then cold boot
+      JMP   End_coldinit      ;else do warm boot
+Feed_rnd:
+      INC   TEMP1       ;random counter
+      LDA   Stat_4            ;system
+      AND   #DFh
+      STA   Stat_4            ;update
+      JSR   Get_feed    ;go test sensor
+      LDA   Stat_4            ;get system
+      AND   •Do_feed    ;ck sw
+      BNE   Feed_md     ;wait for feed to go away
+      LDA   TEMPI       ;get new seed
+      STA   Spcl_seedl  ;stuff it
+      STA   Seed_l            ;also load for cold boot
+
+;************************************************************
+
+;; IF this is a cold boot , reset command then clear EEPROM and
+;  chose a new name and voice.
+
+Do_cold_boot:
+
+      LDA   #00
+      STA   Warm_cold   ;flag cold boot
+A-22
+      LDA   Stat_0            ;system
+      ORA   #Say_new_name     ;make system say new name
+      STA   Stat_0            ;
+
+;*******  NOTE :::::
+;
+;   VOICE AND NAME SLECTION MUST HAPPEN BEFORE EEPROM WRITE OR
+;   THEY WILL ALWAYS COME UP  00    because ram just got cleared!!!!!!
+
+
+
+; Random voice selection here
+
+      LDA   #80h        ;get random/sequential split
+      STA   IN_DAT            ;save for random routine
+      
+      LDX   #00         ;make sure only gives random
+      LDA   #10h        ;get number of random selections
+      JSR   Ran_seq           ;go get random selection
+      
+      TAX
+      LDA   Voice_table,X     ;get new voice
+      STA   Rvoice            ;set new voice pitch
+
+;**********************************************************************
+*
+
+; On power up or reset, Furby must go select a new name ,,, ahw how
+cute.
+
+      JSR   Random            ;
+      AND   #1Fh        ;get 32 possible
+      STA   Name        ;set new name pointer
+      JSR   Do_EE_write ;write the EEPROM
+
+End_coldinit:
+
+
+
+;ÈÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+;* 'Special initialization prior to normal run mode               *
+;*  Jump to Warm_boot when portD wakes us up
+;ÈÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+;
+
+Warm_boot:  ;normal start when Port_D wakes us up.
+
+      JSR   S_EEPROM_READ     ;read data to ram
+
+;Eprom_read_byp:
+
+;***************************************************************
+; If light osc fails, or too dark and that sends us to sleep, we
+; set 'Dark_sleep_prev' and save it in EEPROM in 'Seed_2'.
+; when the sleep routine executes,(00 01 based on this bit)
+; When we wake up we recover this bit and it becomes the previous done
+; flag back in 'Stat_0', so that if the osc is
+A-23
+; still dark or failed, Furby wont go back to sleep.
+      LDA   Seed_2            ;from EEPROM
+      BED   No_prevsleep      ;jump if none
+      LDA   Stat_0            ;system
+      ORA   #Dark_sleep_prev ;prev done
+      STA   Stat_0            ;update
+
+No_prevsleep:
+
+;***************************************************************
+
+      LDA   Spcl_seed1  ;recover start up random number
+      STA   Seed_1            ;set generator
+
+;***************************************************************
+
+
+; Pot_timeL2 is save in ram through sleep mode and then reloaded '
+; Pot_timeL which is the working register for the motor position.
+; This allows startup routines to clear ram without forgetting the
+; last motor position.
+
+      LDA   Pot_timeL2  ;get current count
+      STA   Pot_ imeL   ;save in motor routine counter
+
+;*************************
+
+; Get age and make sure it is not greater than 3 (age4)
+
+      LDA   Age         ;get current age
+      AND   #83h    ;preserve bit 7 which is 9th age counter bit
+;;;;;             and insure age not >3
+
+      STA   Age         ;set system.
+
+;*************************
+
+      LDA   #Bored_reld ;reset timer
+      STA   Bored_timer ;
+
+      LDA   #03         ;set timer
+      STA   Last_IR           ;timer stops IR from hearing own IR xmit
+      
+      JSR   Get_light   ;go get light level sample
+      LDA   TEMP1       ;get new count
+      STA   Light_reff  ;update system
+
+
+;**********************************************************************
+*
+
+      LDA   Warm_cold   ;decide if warm or cold boot
+      CMP   #11h        ;ck for warm boot
+      BEQ   No_zero           ;jump if is
+A-24
+      LDA   #00         ;point to macro 0 (SENDS TO SLEEP POSITION)
+      STA   Macro_Lo
+      STA   Macro_Hi
+      JSR   Get_macro   ;go start motor/speech
+      JSR   Notrdy            ;Do / get status for speech and motor
+
+No_zero:
+
+
+      LDA   #11         ;preset motor speed
+      STA   Mon_len           ;set motor on pulse timing
+
+      LDA   #05        ;set motor to 3/4 speed for speed test
+      STA   Moff_len   ;set motor off pulse timing
+;
+;
+      LDA   • 00        ;clear all system sensor requests
+      STA   3tat_4            ;update
+
+
+; Currently uses 4 tables, one for each age.
+      LDA   Stat_0            ;system
+      ORA   #Init_motor :flag motor to do speed test
+      ORA   #Init_Mspeed      ;2nd part of test
+      STA   Stat_0            ;update
+
+
+;************************************************************
+
+; Do wake up routine :
+
+      lda   #Global_time      ;reset timer to trigger sensor learning
+      STA   Sensor_timer      ;
+
+      LDA   #80h        ;get random/sequential split
+      STA   IN_DAT            ;save for random routine
+
+      LDX   #00h        ;make sure only gives random
+      LDA   #10h        ;get number of random selections
+      JSR   Ran_seq           ;go get random selection
+      LDA   TEMP1       ;get decision
+
+      STA   IN_DAT            ;save decision
+      LDA   #Wake_ID    ;which ram location for learned word count
+(offset)
+      JSR   Start_learn ;go record training info
+      LDA   IN_DAT            ;get back word to speak
+
+      JSR   Decid_age   ;do age calculation for table entry
+      LDX   TEMP0       ;age offset
+      LDA   Wakeup_S1,X ;get new sound/word
+      STA   Macro_Lo    ;save lo byte of Macro table entry
+      INX               ;
+      LDA   Wakeup_S1,X ;get new sound/word
+      STA   Macro_Hi    ;save hi byte of Macro table entry
+      JMP   Start_macro ;go start speech
+
+;************************************************************
+A-25
