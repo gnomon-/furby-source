@@ -586,9 +586,9 @@ Init_rnd:
       STA   Seed_1            ;also load for cold boot
 ;*************************************************************
 
-; Use fee sw to generate a better random number
+; Use feed sw to generate a better random number
 
-      JSF   Get_feed    ;go test sensor
+      JSR   Get_feed    ;go test sensor
       LDA   Stat_4            ;get system
       AND   #Do_feed    ;ck sw
       BNE   Feed_rnd    ;if feed sw then cold boot
@@ -600,11 +600,11 @@ Feed_rnd:
       STA   Stat_4            ;update
       JSR   Get_feed    ;go test sensor
       LDA   Stat_4            ;get system
-      AND   •Do_feed    ;ck sw
-      BNE   Feed_md     ;wait for feed to go away
-      LDA   TEMPI       ;get new seed
-      STA   Spcl_seedl  ;stuff it
-      STA   Seed_l            ;also load for cold boot
+      AND   #Do_feed    ;ck sw
+      BNE   Feed_rnd    ;wait for feed to go away
+      LDA   TEMP1       ;get new seed
+      STA   Spcl_seed1  ;stuff it
+      STA   Seed_1            ;also load for cold boot
 
 ;************************************************************
 
@@ -656,7 +656,7 @@ End_coldinit:
 
 
 ;ÈÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
-;* 'Special initialization prior to normal run mode               *
+;* 'Special initialization prior to normal run mode              *
 ;*  Jump to Warm_boot when portD wakes us up
 ;ÈÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
 ;
@@ -745,8 +745,8 @@ No_zero:
       STA   Moff_len   ;set motor off pulse timing
 ;
 ;
-      LDA   • 00        ;clear all system sensor requests
-      STA   3tat_4            ;update
+      LDA   #00        ;clear all system sensor requests
+      STA   Stat_4           ;update
 
 
 ; Currently uses 4 tables, one for each age.
