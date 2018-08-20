@@ -11,6 +11,12 @@
 [gh-@gnomon-]:
   https://github.com/gnomon-/
 
+[gh-@belimoth]:
+  https://github.com/belimoth/
+
+[gh-@steffantucker]:
+  https://github.com/steffantucker/
+
 ## Background
 
 Some folks [expressed an interest][masto-convo-claim-a-page-range] in
