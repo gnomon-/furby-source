@@ -519,7 +519,7 @@ InitIO:
       STA   Mon_len           ;set motor on pulse timing
 
       LDA   #05         ;
-      STA   Moff_len    ;
+      STA   Moff_len    ;set motor off pulse timing
 
 ;ÈÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ_____ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
 ;* 'Diagnostics and celibration Routine                   *
@@ -596,7 +596,7 @@ Init_rnd:
 Feed_rnd:
       INC   TEMP1       ;random counter
       LDA   Stat_4            ;system
-      AND   #DFh
+      AND   #DFh        ;clear any prev feed sw senses
       STA   Stat_4            ;update
       JSR   Get_feed    ;go test sensor
       LDA   Stat_4            ;get system
@@ -697,7 +697,7 @@ No_prevsleep:
 ; last motor position.
 
       LDA   Pot_timeL2  ;get current count
-      STA   Pot_ imeL   ;save in motor routine counter
+      STA   Pot_timeL   ;save in motor routine counter
 
 ;*************************
 
@@ -750,8 +750,9 @@ No_zero:
 
 
 ; Currently uses 4 tables, one for each age.
+
       LDA   Stat_0            ;system
-      ORA   #Init_motor :flag motor to do speed test
+      ORA   #Init_motor ;flag motor to do speed test
       ORA   #Init_Mspeed      ;2nd part of test
       STA   Stat_0            ;update
 
@@ -833,7 +834,7 @@ found.
 
 
 ;
-Spcl_Namel:
+Spcl_Name1:
       LDX   #00         ;offset
 Spcl_Name2:
       LDA   Ck_Name_table,X   ;ck lo byte
@@ -849,7 +850,7 @@ Spcl_Name2:
       JMP   Say_Sname   ;speak it
 Not_Name2:
       INX               ;
-Not_Nama3:
+Not_Name3:
       INX               ;
       JMP   Spcl_Name2  ;loop til done
 
@@ -865,7 +866,7 @@ Say_Sname:
       LDA   Name_table,X      ;get lo byte
       STA   Macro_Lo    ;save lo byte of Macro table entry
       INX               ;
-      LDA   Name table,X      ;get hi byte
+      LDA   Name_table,X      ;get hi byte
       STA   Macro_Hi    ;save hi byte of Macro table entry
       JSR   Get_macro   ;go start motor/speech
       JSR   Notrdy            ;Do / get status for speech and motor
@@ -906,9 +907,9 @@ Spcl_IR_dn:
 ;
 A-27
 ;
-Spcl_macrol:
+Spcl_macro1:
       LDX   #00         ;offset
-Spcl_sleepl:
+Spcl_sleep1:
       LDA   Sleepy_table,X    ;ck lo byte
       CMP   #FFh        ;ck for end of table (note 255 cant execute)
       BEQ   Ck_macro_dn ;done if is
@@ -917,7 +918,7 @@ Spcl_sleepl:
       INX               ;to hi byte
       LDA   Sleepy_table,X    ;ck hi byte
       CMP   Req_macro_hi      ;ck against last speech request
-      BNE   Not_sleepy_ ;jump if not
+      BNE   Not_sleepy3 ;jump if not
       LDA   #00         ;clear macro pointers for wake up
       STA   Req_macro_lo
       STA   Req_macro_hi
@@ -963,7 +964,7 @@ Sleepy_table:
 
       DW    166   ;wake up
       DW    167   ;wake up
-      DW    166   ;wake up
+      DW    168   ;wake up
       DW    169   ;wake up
 A-28
       DW    258   ;Back sw
@@ -1040,7 +1041,7 @@ IRxmit_table:
       DW    293   ;trigger macro
       DB    05    ;which IR command to call ( 0 - 0f )
       DW    394   ;trigger macro
-      DB    05    ;which IR comnand to call ( 0 - 0f )
+      DB    05    ;which IR command to call ( 0 - 0f )
       DW    406   ;trigger macro
       DB    05    ;which IR command to call ( 0 - 0f )
       DW    414   ;trigger macro
@@ -1049,7 +1050,7 @@ IRxmit_table:
       DB    05    ;which IR command to call ( 0 - 0f )
 
       DW    395   ;trigger macro
-      DB    06    ;which IR comnand to call ( 0 - 0f )
+      DB    06    ;which IR command to call ( 0 - 0f )
       DW    421   ;trigger macro
       DB    06    ;which IR command to call ( 0 - 0f )
       DW    423   ;trigger macro
@@ -1149,7 +1150,9 @@ IRxmit_table:
       DW    420   ;trigger macro
 A-31
       DB    15    ;which IR command to call ( 0 - 0f )
+
 ;mod F-rels2 ; send sleep if recv sleep on IR
+
       DW    403   ;trigger macro
       DB    15    ;which IR command to call ( 0 - 0f )
       DW    413   ;trigger macro
@@ -1259,7 +1262,7 @@ Ck_tsk_A:
 ; Continue to execute the first active game found, and that game always
 ; allows the task list to be scaned for sensor input. If no games are
 ; active, than check task 0 to determine if the correct sensor sequence
-; is occuring which will initiate tha next game.
+; is occuring which will initiate the next game.
 
 Ck_task_egg:
 
@@ -1300,7 +1303,7 @@ Ck_g8:
 Ck_g9:
 
 
-;  non activ
+;  none activ
 ;
 ;;*************************
 
@@ -1422,12 +1425,12 @@ Ck_gam2:    ; Rap mode
       LDA   Rap_table,X ;get current data
       AND   Stat_4            ;compare against sensor trigger
       BNE   Ck_gam2a    ;if set then good compare
-      LDA   Qualifyl    ;update game qualification
+      LDA   Qualify1    ;update game qualification
       ORA   #DQ_rap           ;set dis-qualified bit
       STA   Qualify1    ;update system
       JMP   Ck_gam3           ;check next egg
 Ck_gam2a:
-      LDA   Rap_table+1,X     ;get current data ♦ ! to see if end of egg
+      LDA   Rap_table+1,X     ;get current data +1 to see if end of egg
       CMP   #FFh        ;test if end of table and start of game
       BNE   Ck_gam3           ;jump if not at end
       JSR   Clear_games ;go reset all other triggers and game pointers
@@ -1467,7 +1470,7 @@ Ck_gam4:    ; Simon says
       BNE   Ck_gam4a    ;if set then good compare
       LDA   Qualify1    ;update game qualification
       ORA   #DQ_simon   ;set dis-qualified bit
-      STA   Qualifyl    ;update system
+      STA   Qualify1    ;update system
       JMP   Ck_gam5           ;check next egg
 Ck_gam4a:
       LDA   Simon_table+1,X   ;get current data +1 to see if end of egg
@@ -1490,7 +1493,7 @@ Ck_gam5:    ; Burp attack
       BNE   Ck_gam5a    ;if set then good compare
       LDA   Qualify1    ;update game qualification
       ORA   #DQ_burp    ;set dis-qualified bit
-      STA   Qualifyl    ;update system
+      STA   Qualify1    ;update system
       JMP   Ck_gam6           ;check next egg
 Ck_gam5a:
       LDA   Burp_table+1,X    ;get current data +1 to see if end of egg
@@ -1517,7 +1520,7 @@ Ck_gam6:    ; say name
       STA   Qualify1    ;update system
       JMP   Ck_gam7           ;check next egg
 Ck_gam6a:
-      LDA   Name_egg*l,X      ;get current data +1 to see if end of egg
+      LDA   Name_egg+1,X      ;get current data +1 to see if end of egg
       CMP   #FFh        ;test if end of table and start of game
       BNE   Ck_gam7           ;jump if not at end
       JSR   Clear_games ;go reset all other triggers and game pointers
@@ -1537,7 +1540,7 @@ Ck_gam7:    ; twinkle song
       BNE   Ck_gam7a    ;if set then good compare
       LDA   Qualify1    ;update game qualification
       ORA   #DQ_twinkle ;set dis-qualified bit
-      STA   Qualifyl    ;update system
+      STA   Qualify1    ;update system
       JMP   Ck_gam8           ;check next egg
 Ck_gam7a:
       LDA   Twinkle_egg+1,X   ;get current data +1 to see if end of egg
@@ -1563,16 +1566,16 @@ Ck_gam8:    ; rooster loves you
       STA   Qualify1    ;update system
       JMP   Ck_gam9           ;check next egg
 Ck_gam8a:
-LDA         Rooster_egg+1,X   ;get current data *1 to see if end of egg
-CMP         #FFh        ;test if end of table and start of game
-BNE         Ck_gam9           ;jump if not at end
-JSR         Clear_games ;go reset all other triggers and game pointers
-LDA         Game_l            ;get system
-ORA         #Rooster_mode     ;start game mode
-STA         Game_l            ;update
-LDA         #00         ;clear all pointers
-STA         Stat_5            ;system
-JMP         Idle        ;done
+      LDA   Rooster_egg+1,X   ;get current data +1 to see if end of egg
+      CMP   #FFh        ;test if end of table and start of game
+      BNE   Ck_gam9           ;jump if not at end
+      JSR   Clear_games ;go reset all other triggers and game pointers
+      LDA   Game_1            ;get system
+      ORA   #Rooster_mode     ;start game mode
+      STA   Game_1            ;update
+      LDA   #00         ;clear all pointers
+      STA   Stat_5            ;system
+      JMP   Idle        ;done
 A-38
 A-39
 A-40
