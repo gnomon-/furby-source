@@ -7,6 +7,7 @@
 - [ ] (2018-08-15, [@gnomon-][gh-@gnomon-]) p. **A-7**
 - [ ] (2018-08-16, [@belimoth][gh-@belimoth]) p. **60 - 79**
 - [ ] (2018-08-20, [@steffantucker][gh-@steffantucker]) p. **25 - 40**
+- [ ] (2018-08-24, [@rain-1][@gh-@rain1]) p.g A-111 to A-115 (Light5.asm)
 
 [gh-@gnomon-]:
   https://github.com/gnomon-/
@@ -16,6 +17,9 @@
 
 [gh-@steffantucker]:
   https://github.com/steffantucker/
+
+[gh-@rain-1]:
+  https://github.com/rain-1/
 
 ## Background
 
