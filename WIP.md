@@ -5,6 +5,7 @@
 ## Claims
 
 - [ ] (2018-08-15, [@gnomon-][gh-@gnomon-]) p. **A-7**
+- [ ] (2019-01-28, [@dataliborc-][gh-@datalibr-]) p. **8 - 16**
 - [ ] (2018-08-16, [@belimoth][gh-@belimoth]) p. **60 - 79**
 - [ ] (2018-08-20, [@steffantucker][gh-@steffantucker]) p. **25 - 40**
 
